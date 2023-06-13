@@ -1,0 +1,105 @@
+diff --git a/node_modules/@th3rdwave/react-navigation-bottom-sheet/src/BottomSheetView.tsx b/node_modules/@th3rdwave/react-navigation-bottom-sheet/src/BottomSheetView.tsx
+index c34e6be..69b27b4 100644
+--- a/node_modules/@th3rdwave/react-navigation-bottom-sheet/src/BottomSheetView.tsx
++++ b/node_modules/@th3rdwave/react-navigation-bottom-sheet/src/BottomSheetView.tsx
+@@ -103,12 +103,6 @@ export function BottomSheetView({ state, descriptors }: Props) {
+     [colors.border],
+   );
+ 
+-  // Avoid rendering provider if we only have one screen.
+-  const shouldRenderProvider = React.useRef(false);
+-  shouldRenderProvider.current =
+-    shouldRenderProvider.current || state.routes.length > 1;
+-
+-  const firstScreen = descriptors[state.routes[0].key];
+ 
+   const {
+     animatedHandleHeight,
+@@ -118,49 +112,44 @@ export function BottomSheetView({ state, descriptors }: Props) {
+   } = useBottomSheetDynamicSnapPoints(initialDynamicSnapPoints);
+ 
+   return (
+-    <>
+-      {firstScreen.render()}
+-      {shouldRenderProvider.current && (
+-        <BottomSheetModalProvider>
+-          {state.routes.slice(1).map((route) => {
+-            const { options, navigation, render } = descriptors[route.key];
+-
+-            const {
+-              index,
+-              backgroundStyle,
++    <BottomSheetModalProvider>
++      {state.routes.map((route) => {
++        const { options, navigation, render } = descriptors[route.key];
++
++        const {
++          index,
++          backgroundStyle,
++          handleIndicatorStyle,
++          snapPoints = animatedSnapPoints.value,
++          ...sheetProps
++        } = options;
++
++        return (
++          <BottomSheetModalScreen
++            key={route.key}
++            // Make sure index is in range, it could be out if snapToIndex is persisted
++            // and snapPoints is changed.
++            index={Math.min(
++              route.snapToIndex ?? index ?? 0,
++              snapPoints.length - 1,
++            )}
++            contentHeight={animatedContentHeight}
++            handleHeight={animatedHandleHeight}
++            snapPoints={snapPoints}
++            navigation={navigation}
++            backgroundStyle={[themeBackgroundStyle, backgroundStyle]}
++            handleIndicatorStyle={[
++              themeHandleIndicatorStyle,
+               handleIndicatorStyle,
+-              snapPoints = animatedSnapPoints.value,
+-              ...sheetProps
+-            } = options;
+-
+-            return (
+-              <BottomSheetModalScreen
+-                key={route.key}
+-                // Make sure index is in range, it could be out if snapToIndex is persisted
+-                // and snapPoints is changed.
+-                index={Math.min(
+-                  route.snapToIndex ?? index ?? 0,
+-                  snapPoints.length - 1,
+-                )}
+-                contentHeight={animatedContentHeight}
+-                handleHeight={animatedHandleHeight}
+-                snapPoints={snapPoints}
+-                navigation={navigation}
+-                backgroundStyle={[themeBackgroundStyle, backgroundStyle]}
+-                handleIndicatorStyle={[
+-                  themeHandleIndicatorStyle,
+-                  handleIndicatorStyle,
+-                ]}
+-                {...sheetProps}
+-              >
+-                <RNBottomSheetView onLayout={handleContentLayout}>
+-                  {render()}
+-                </RNBottomSheetView>
+-              </BottomSheetModalScreen>
+-            );
+-          })}
+-        </BottomSheetModalProvider>
+-      )}
+-    </>
++            ]}
++            {...sheetProps}
++          >
++            <RNBottomSheetView onLayout={handleContentLayout}>
++              {render()}
++            </RNBottomSheetView>
++          </BottomSheetModalScreen>
++        );
++      })}
++    </BottomSheetModalProvider>
+   );
+ }
